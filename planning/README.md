@@ -9,11 +9,11 @@ First, we need to decide on a project idea and requirements. We will try and kee
 ![gantt_chart](./project_plan.png)
 
 ## First Meeting Agenda
-Introduce Project
-Timeline
-Sub-groups
-Brainstorming
-Technology brainstorming
+*Introduce Project
+*Timeline
+*Sub-groups
+*Brainstorming
+*Technology brainstorming
 
 ## Sub-groups
 ### Hardware
