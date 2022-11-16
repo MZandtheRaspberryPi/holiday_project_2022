@@ -8,6 +8,13 @@ First, we need to decide on a project idea and requirements. We will try and kee
 ## Timeline
 ![gantt_chart](./project_plan.png)
 
+## First Meeting Agenda
+Introduce Project
+Timeline
+Sub-groups
+Brainstorming
+Technology brainstorming
+
 ## Sub-groups
 ### Hardware
 This group will plan out how to accomplish the requirements from a hardware perspective. This may include identifying components to use and making a schematic.
