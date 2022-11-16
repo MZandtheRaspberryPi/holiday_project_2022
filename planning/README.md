@@ -6,7 +6,7 @@ This is a project that a group of friends are taking on towards the holidays in 
 First, we need to decide on a project idea and requirements. We will try and keep it relatively small, quick, and cheap. Then we will plan out the hardware, software, and design. We will make a prototype and do a proof of concept. Then we will order components for everyone in the group and build it all together.
 
 ## Timeline
-![gantt_chart](./planning.png)
+![gantt_chart](./project_plan.png)
 
 ## Sub-groups
 ### Hardware
