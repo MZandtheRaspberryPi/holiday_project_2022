@@ -25,14 +25,14 @@ We met and decided what exactly we will support. We will have a bat, in 3d, with
 It will look pretty, and be selectively painted. It should have hooks to hang on a christmas tree, or it could stand, or it could slot into a monitor.
 
 ## components
-OLED Screen
-10 Addressable RGB Leds
-ESP 82 66
-Ultrasonic sensor circuit
-USB Cable
-Paint
-3d Printed Plastic
-Perfboard
+* OLED Screen
+* 10 Addressable RGB Leds
+* ESP 82 66
+* Ultrasonic sensor circuit
+* USB Cable
+* Paint
+* 3d Printed Plastic
+* Perfboard
 
 ## Sub-groups
 ### Hardware
