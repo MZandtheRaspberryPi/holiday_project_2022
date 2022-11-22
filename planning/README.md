@@ -19,6 +19,21 @@ First, we need to decide on a project idea and requirements. We will try and kee
 The bat ornament won, we will make that!
 ![voting_results](./vote_count.png)
 
+## feature definition
+We met and decided what exactly we will support. We will have a bat, in 3d, with an oled screen for a face that will move and be animated. It will also have ultrasonic sensors in its ears that will let it react to when something is in front of it. It will also have RGB LEDs on its wings, addressable, that will react and animate. It will not be battery powered, it will have a usb cable running from it.
+
+It will look pretty, and be selectively painted. It should have hooks to hang on a christmas tree, or it could stand, or it could slot into a monitor.
+
+## components
+OLED Screen
+10 Addressable RGB Leds
+ESP 82 66
+Ultrasonic sensor circuit
+USB Cable
+Paint
+3d Printed Plastic
+Perfboard
+
 ## Sub-groups
 ### Hardware
 This group will plan out how to accomplish the requirements from a hardware perspective. This may include identifying components to use and making a schematic.
