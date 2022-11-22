@@ -13,11 +13,11 @@ First, we need to decide on a project idea and requirements. We will try and kee
 * Technology brainstorming
 
 ## Timeline
-![gantt_chart](./vote_count.png)
+![gantt_chart](./project_plan.png)
 
 ## Voting Results
 The bat ornament won, we will make that!
-![voting_results](./voting_results.png)
+![voting_results](./vote_count.png)
 
 ## Sub-groups
 ### Hardware
