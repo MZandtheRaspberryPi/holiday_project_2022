@@ -134,7 +134,7 @@ const TProgmemPalette16 myRedWhiteBluePalette_p PROGMEM =
 
 void task_LED_setup(void)
 {
-    delay( 3000 ); // power-up safety delay
+    // delay( 3000 ); // power-up safety delay
     FastLED.addLeds<LED_TYPE, LED_PIN_R, COLOR_ORDER>(ledsR, NUM_LEDS).setCorrection( TypicalLEDStrip );
     FastLED.addLeds<LED_TYPE, LED_PIN_L, COLOR_ORDER>(ledsL, NUM_LEDS).setCorrection( TypicalLEDStrip );
     FastLED.setBrightness(  BRIGHTNESS );

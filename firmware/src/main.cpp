@@ -2,12 +2,14 @@
 #include <TaskScheduler.h>
 
 #include "led.h"
+#include "oled.h"
 
 void led_blink();
 
 Scheduler runner;
 Task Task_LED_Blink(1000, TASK_FOREVER, &led_blink);
 Task Task_LED_WS2812(500, TASK_FOREVER, &task_LED_periodic);
+Task Task_OLED(100, TASK_FOREVER, &task_OLED_periodic);
 
 void setup() {
   Serial.begin(9600);
@@ -18,6 +20,7 @@ void setup() {
   runner.addTask(Task_LED_WS2812);
 
   task_LED_setup();
+  task_OLED_setup();
 
   Task_LED_Blink.enable();
   Task_LED_WS2812.enable();
