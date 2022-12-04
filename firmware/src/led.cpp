@@ -132,7 +132,7 @@ const TProgmemPalette16 myRedWhiteBluePalette_p PROGMEM =
 };
 
 
-void task_LED_setup(void)
+bool task_LED_setup(void)
 {
     // delay( 3000 ); // power-up safety delay
     FastLED.addLeds<LED_TYPE, LED_PIN_R, COLOR_ORDER>(ledsR, NUM_LEDS).setCorrection( TypicalLEDStrip );
@@ -141,46 +141,18 @@ void task_LED_setup(void)
     
     currentPalette = RainbowColors_p;
     currentBlending = LINEARBLEND;
+
+    return true;
 }
 
 void task_LED_periodic(void)
 {
-    // ChangePalettePeriodically();
+    ChangePalettePeriodically();
     
-    // static uint8_t startIndex = 0;
-    // startIndex = startIndex + 1; /* motion speed */
+    static uint8_t startIndex = 0;
+    startIndex = startIndex + 1; /* motion speed */
     
-    // FillLEDsFromPaletteColors( startIndex);
-
-    static bool state = false;
-    
-
-    if (state)
-    {
-        for (int i = 0 ; i < 5; ++i)
-        {
-            ledsL[i].setRGB(0, 0, (i+1) * 40);
-        }
-
-        for (int i = 0 ; i < 5; ++i)
-        {
-            ledsR[i].setRGB(0, 0, 0);
-        }
-    }
-    else
-    {
-        for (int i = 0 ; i < 5; ++i)
-        {
-            ledsL[i].setRGB(0, 0, 0);
-        }
-
-        for (int i = 0 ; i < 5; ++i)
-        {
-            ledsR[i].setRGB(0, (i+1) * 40, 0);
-        }
-    }
-    
-    state = !state;
+    FillLEDsFromPaletteColors( startIndex);
 
     FastLED.show();
 }
