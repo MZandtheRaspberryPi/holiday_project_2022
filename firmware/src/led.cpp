@@ -2,17 +2,14 @@
 
 #include <Arduino.h>
 #include <FastLED.h>
+#include "pins.h"
 
-#define LED_PIN_L   D8
-#define LED_PIN_R   D7
 #define NUM_LEDS    5
-#define BRIGHTNESS  100
+#define BRIGHTNESS  20
 #define LED_TYPE    WS2812B
 #define COLOR_ORDER GRB
 CRGB ledsR[NUM_LEDS];
 CRGB ledsL[NUM_LEDS];
-
-#define UPDATES_PER_SECOND 50
 
 CRGBPalette16 currentPalette;
 TBlendType    currentBlending;
@@ -135,8 +132,8 @@ const TProgmemPalette16 myRedWhiteBluePalette_p PROGMEM =
 bool task_LED_setup(void)
 {
     // delay( 3000 ); // power-up safety delay
-    FastLED.addLeds<LED_TYPE, LED_PIN_R, COLOR_ORDER>(ledsR, NUM_LEDS).setCorrection( TypicalLEDStrip );
-    FastLED.addLeds<LED_TYPE, LED_PIN_L, COLOR_ORDER>(ledsL, NUM_LEDS).setCorrection( TypicalLEDStrip );
+    FastLED.addLeds<LED_TYPE, PIN_WS2812_R, COLOR_ORDER>(ledsR, NUM_LEDS).setCorrection( TypicalLEDStrip );
+    FastLED.addLeds<LED_TYPE, PIN_WS2812_L, COLOR_ORDER>(ledsL, NUM_LEDS).setCorrection( TypicalLEDStrip );
     FastLED.setBrightness(  BRIGHTNESS );
     
     currentPalette = RainbowColors_p;

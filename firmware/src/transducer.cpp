@@ -1,16 +1,14 @@
 #include "transducer.h"
 
 #include <Arduino.h>
-
-#define PWM_PIN D0
-#define ADC_PIN A0
+#include "pins.h"
 
 #define PWM_FREQUENCY   39000
 
 bool task_transducer_setup(void)
 {
     analogWriteFreq(PWM_FREQUENCY);
-    analogWrite(PWM_PIN, 127);
+    analogWrite(PIN_PWM, 127);
 
     pinMode(LED_BUILTIN, OUTPUT);
 
@@ -20,7 +18,7 @@ bool task_transducer_setup(void)
 void task_transducer_periodic(void)
 {
     static bool led_state = false;
-    uint16_t adc_value = analogRead(ADC_PIN);
+    uint16_t adc_value = analogRead(PIN_ADC);
 
     if (adc_value > 500)
         led_state = HIGH;
