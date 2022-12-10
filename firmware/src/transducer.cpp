@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include "pins.h"
 #include "led.h"
+#include "oled.h"
 
 #define PWM_FREQUENCY       39000
 #define ADC_SAMPLES_BASIC   20
@@ -12,6 +13,7 @@ void basic_presence_detection(void)
     analogWrite(PIN_PWM, 512);
 
     uint32_t sum = 0;
+    uint16_t avg = 0;
     for (int i = 0; i < ADC_SAMPLES_BASIC; ++i)
     {
         sum += analogRead(PIN_ADC);
@@ -19,8 +21,12 @@ void basic_presence_detection(void)
 
     analogWrite(PIN_PWM, 0);
 
-    if ((sum / ADC_SAMPLES_BASIC) > 2)
+    avg = sum / ADC_SAMPLES_BASIC;
+
+    if (avg > 2)
         LED_Switch_Mode();
+
+    draw_data_point(avg, 64);
 }
 
 bool task_transducer_setup(void)

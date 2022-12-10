@@ -18,7 +18,7 @@ void setup() {
 
   Task_LED_WS2812.enable();
   Task_OLED.enable();
-  // Task_Transducer.enable();
+  Task_Transducer.enable();
 
   runner.startNow();
 }
