@@ -2,26 +2,36 @@
 
 #include <Arduino.h>
 #include "pins.h"
+#include "led.h"
 
-#define PWM_FREQUENCY   39000
+#define PWM_FREQUENCY       39000
+#define ADC_SAMPLES_BASIC   20
+
+void basic_presence_detection(void)
+{
+    analogWrite(PIN_PWM, 512);
+
+    uint32_t sum = 0;
+    for (int i = 0; i < ADC_SAMPLES_BASIC; ++i)
+    {
+        sum += analogRead(PIN_ADC);
+    }
+
+    analogWrite(PIN_PWM, 0);
+
+    if ((sum / ADC_SAMPLES_BASIC) > 2)
+        LED_Switch_Mode();
+}
 
 bool task_transducer_setup(void)
 {
     analogWriteFreq(PWM_FREQUENCY);
-    analogWrite(PIN_PWM, 127);
-
-    pinMode(LED_BUILTIN, OUTPUT);
+    analogWriteRange(1023);
 
     return true;
 }
 
 void task_transducer_periodic(void)
 {
-    static bool led_state = false;
-    uint16_t adc_value = analogRead(PIN_ADC);
-
-    if (adc_value > 500)
-        led_state = HIGH;
-    else if (adc_value < 300)
-        led_state = LOW;
+    basic_presence_detection();
 }
