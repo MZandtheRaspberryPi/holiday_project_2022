@@ -7,8 +7,18 @@
 #include "pins.h"
 #include "mode_sparkling.h"
 
-#define LED_TYPE        WS2812B
-#define COLOR_ORDER     GRB
+#define LED_TYPE                WS2812B
+#define COLOR_ORDER             GRB
+
+#define LED_FADE_ON_DIFF        15
+#define LED_FADE_MAX_INTENSITY  100
+#define LED_FADE_ON_MAX_COUNT   (LED_FADE_MAX_INTENSITY + (LEDS_PER_STRING * LED_FADE_ON_DIFF))
+#define NUM_OF_WING_FLAPS       3
+
+typedef enum {
+    LED_FADE_OFF,
+    LED_FADE_ON
+} LED_FadeDirection_e;
 
 typedef enum {
     LED_MODE_DEMO1,
@@ -17,11 +27,24 @@ typedef enum {
     LED_MODE_NUMBER
 } LED_Modes_e;
 
+typedef enum {
+    LED_ACTION_MODE_WING_FLAP,
+    LED_ACTION_MODE_NUMBER
+} LED_ActionMode_e;
+
+typedef struct {
+    bool isStarted;
+    bool direction;
+    uint8_t speed;
+    int16_t count;
+} LED_FadeLightCurtain_t;
 
 CRGB ledsR[LEDS_PER_STRING];
 CRGB ledsL[LEDS_PER_STRING];
 
-static uint8_t ledMode;
+static uint8_t ledMode = LED_MODE_SPARKLING;
+static uint8_t ledActionMode = LED_ACTION_MODE_WING_FLAP;
+static bool ledActionModeActive = false;
 
 CRGBPalette16 currentPalette;
 TBlendType    currentBlending;
@@ -150,67 +173,117 @@ void LED_Mode_Demo(void)
     FillLEDsFromPaletteColors( startIndex);
 }
 
-void LED_Mode_Demo2(void)
+bool LED_Fade_Light_Curtain(uint8_t* pixelIntensity, LED_FadeLightCurtain_t* fadeData)
 {
-    static uint32_t cnt = 0;
-    uint16_t tmp_value = cnt % 1000;
+    bool isFinished = false;
 
-    if (tmp_value < 500)
+    if (!fadeData->isStarted)
     {
-        for (int i = 0; i < 5; ++i)         // for every led
+        fadeData->isStarted = true;
+        if (fadeData->direction)
+            fadeData->count = 0;
+        else
+            fadeData->count = LED_FADE_ON_MAX_COUNT;
+    }
+
+    for (int i = 0; i < LEDS_PER_STRING; ++i)         // for every led
+    {
+        int16_t pixelIntensityTemp;
+
+        pixelIntensityTemp = fadeData->count - (i * LED_FADE_ON_DIFF); // shift color to negative side depending on led index
+
+        if (pixelIntensityTemp > LED_FADE_MAX_INTENSITY)                     // keep values in borders
+            pixelIntensity[i] = LED_FADE_MAX_INTENSITY;
+        else if (pixelIntensityTemp < 0)
+            pixelIntensity[i] = 0;
+        else
+            pixelIntensity[i] = pixelIntensityTemp;
+    }
+
+    if (fadeData->direction)
+    {
+        fadeData->count += fadeData->speed;
+        if (fadeData->count > LED_FADE_ON_MAX_COUNT)
         {
-            int16_t pixel_intensity;
-            uint8_t red_intensity;
-
-            pixel_intensity = tmp_value - (i * 20); // shift color to negative side depending on led index
-
-            if (pixel_intensity > 255)              // keep values in borders
-                red_intensity = 255;
-            else if (pixel_intensity < 0)
-                red_intensity = 0;
-            else
-                red_intensity = pixel_intensity;
-
-            ledsL[i].setRGB(red_intensity, 0, (255 - red_intensity));   // set colors to one LED on the left stripe
-            ledsR[i].setRGB(red_intensity, 0, (255 - red_intensity));   // set colors to one LED on the right stripe
+            isFinished = true;
         }
     }
     else
     {
-        tmp_value = 1000 - tmp_value;
-
-        for (int i = 0; i < 5; ++i)         // for every led
+        fadeData->count -= fadeData->speed;
+        if (fadeData->count < 0)
         {
-            int16_t pixel_intensity;
-            uint8_t red_intensity;
-
-            pixel_intensity = tmp_value - (i * 20); // shift color to negative side depending on led index
-
-            if (pixel_intensity > 255)              // keep values in borders
-                red_intensity = 255;
-            else if (pixel_intensity < 0)
-                red_intensity = 0;
-            else
-                red_intensity = pixel_intensity;
-
-            ledsL[i].setRGB(red_intensity, 0, (255 - red_intensity));   // set colors to one LED on the left stripe
-            ledsR[i].setRGB(red_intensity, 0, (255 - red_intensity));   // set colors to one LED on the right stripe
+            isFinished = true;
         }
     }
 
-    ++cnt;
+    if (isFinished)
+    {
+        fadeData->isStarted = false;
+        for (int i = 0; i < LEDS_PER_STRING; ++i)   // make sure, the intensity is at the expected finish value
+        {
+            if (fadeData->direction)
+                pixelIntensity[i] = LED_FADE_MAX_INTENSITY;
+            else
+                pixelIntensity[i] = 0;
+        }
+    }
+
+    return isFinished;
+}
+
+void LED_Mode_Demo2(void)
+{
+    static LED_FadeLightCurtain_t fadeData = {.direction = LED_FADE_ON, .speed = 1};
+    uint8_t pixelIntensity[LEDS_PER_STRING];
+    bool isFinished = LED_Fade_Light_Curtain(pixelIntensity, &fadeData);
+
+    for (uint8_t i = 0; i < LEDS_PER_STRING; ++i)
+    {
+        ledsL[i].setRGB(pixelIntensity[i], 0, (LED_FADE_MAX_INTENSITY - pixelIntensity[i]));   // set colors to one LED on the left stripe
+        ledsR[i].setRGB(pixelIntensity[i], 0, (LED_FADE_MAX_INTENSITY - pixelIntensity[i]));   // set colors to one LED on the right stripe
+    }
+
+    if (isFinished)
+        fadeData.direction = !fadeData.direction;
+}
+
+void LED_Mode_Wing_Flap(void)
+{
+    static LED_FadeLightCurtain_t fadeData = {.direction = LED_FADE_ON, .speed = 8};
+    static uint8_t flapCount = 0;
+    uint8_t pixelIntensity[LEDS_PER_STRING];
+    bool isFinished = LED_Fade_Light_Curtain(pixelIntensity, &fadeData);
+
+    for (uint8_t i = 0; i < LEDS_PER_STRING; ++i)
+    {
+        ledsL[i].setRGB(pixelIntensity[i], 0, 0);   // set colors to one LED on the left stripe
+        ledsR[i].setRGB(pixelIntensity[i], 0, 0);   // set colors to one LED on the right stripe
+    }
+
+    if (isFinished)
+    {
+        if (fadeData.direction == LED_FADE_OFF)
+            ++flapCount;
+
+        fadeData.direction = !fadeData.direction;
+    }
+
+    if (flapCount >= NUM_OF_WING_FLAPS)
+    {
+        flapCount = 0;
+        ledActionModeActive = false;
+    }
 }
 
 void LED_Switch_Mode(void)
 {
-    static uint32_t lastTime = 0;
+    ledMode = (ledMode + 1) % LED_MODE_NUMBER;
+}
 
-    if ((millis() - lastTime) > 500)
-    {
-        ledMode = (ledMode + 1) % LED_MODE_NUMBER;
-    }
-
-    lastTime = millis();
+void LED_Trigger_Action_Mode(void)
+{
+    ledActionModeActive = true;
 }
 
 bool task_LED_setup(void)
@@ -230,22 +303,37 @@ bool task_LED_setup(void)
 
 void task_LED_periodic(void)
 {
-    switch (ledMode)
+    if (ledActionModeActive)
     {
-        case LED_MODE_DEMO1:
-            LED_Mode_Demo();
-            break;
+        switch (ledActionMode)
+        {
+            case LED_ACTION_MODE_WING_FLAP:
+                LED_Mode_Wing_Flap();
+                break;
+            
+            default:
+                break;
+        }
+    }
+    else
+    {
+        switch (ledMode)
+        {
+            case LED_MODE_DEMO1:
+                LED_Mode_Demo();
+                break;
 
-        case LED_MODE_DEMO2:
-            LED_Mode_Demo2();
-            break;
+            case LED_MODE_DEMO2:
+                LED_Mode_Demo2();
+                break;
 
-        case LED_MODE_SPARKLING:
-            LED_Mode_Sparkling(ledsL, ledsR);
-            break;
+            case LED_MODE_SPARKLING:
+                LED_Mode_Sparkling(ledsL, ledsR);
+                break;
 
-        default:
-            break;
+            default:
+                break;
+        }
     }
 
     FastLED.show();

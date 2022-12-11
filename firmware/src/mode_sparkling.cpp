@@ -21,15 +21,15 @@ void LED_Mode_Sparkling_Set_Color(uint8_t red, uint8_t green, uint8_t blue)
 {
     for (uint8_t i = 0; i < LEDS_PER_STRING; ++i)
     {
-        ledDataL[i].targetColor.red = 40;
-        ledDataL[i].targetColor.green = 0;
-        ledDataL[i].targetColor.blue = 50;
+        ledDataL[i].targetColor.red = red;
+        ledDataL[i].targetColor.green = green;
+        ledDataL[i].targetColor.blue = blue;
     }
     for (uint8_t i = 0; i < LEDS_PER_STRING; ++i)
     {
-        ledDataR[i].targetColor.red = 40;
-        ledDataR[i].targetColor.green = 0;
-        ledDataR[i].targetColor.blue = 50;
+        ledDataR[i].targetColor.red = red;
+        ledDataR[i].targetColor.green = green;
+        ledDataR[i].targetColor.blue = blue;
     }
 }
 
