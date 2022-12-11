@@ -296,7 +296,7 @@ bool task_LED_setup(void)
     currentPalette = RainbowColors_p;
     currentBlending = LINEARBLEND;
 
-    LED_Mode_Sparkling_Set_Color(40, 0, 50);
+    LED_Mode_Sparkling_Set_Color(0, 50, 40);
 
     return true;
 }

@@ -2,7 +2,8 @@
 
 #include "led.h"
 
-#define UNEVEN_LED_CNT  (LEDS_PER_STRING % 2)
+#define UNEVEN_LED_CNT          (LEDS_PER_STRING % 2)
+#define SPARKLING_FADE_SPEED    2
 
 typedef struct ledSparkling_t
 {
@@ -47,7 +48,7 @@ void LED_Handle_Sparkling_Single_Fade(ledSparkling_t *ledData)
         ledData->intensity = 511 - ledData->cnt;
     }
 
-    ledData->cnt += 2;
+    ledData->cnt += SPARKLING_FADE_SPEED;
 
     if (ledData->cnt >= 512)
     {
@@ -63,14 +64,6 @@ void LED_Handle_Sparkling_Single_Fade(ledSparkling_t *ledData)
 
 void LED_Handle_Sparkling_Stripe(ledSparkling_t *ledData, CRGB *leds)
 {
-    uint8_t activeLedsCnt = 0;
-
-    for (uint8_t i = 0; i < LEDS_PER_STRING; ++i)
-    {
-        if (ledData[i].isActive)
-            ++activeLedsCnt;
-    }
-
     for (uint8_t i = 0; i < LEDS_PER_STRING; ++i)
     {
         uint8_t index = i;
@@ -79,10 +72,20 @@ void LED_Handle_Sparkling_Stripe(ledSparkling_t *ledData, CRGB *leds)
         if (i % 2)
             index = (LEDS_PER_STRING - UNEVEN_LED_CNT) - i;
 
-        if ((activeLedsCnt < 2) && (rand() % 1000 == 0))
+        if (index == 0) // first LED
         {
-            ledData[index].isActive = true;
-            ++activeLedsCnt;
+            if (!ledData[index + 1].isActive && (rand() % 1000 == 0)) // second LED is off
+                ledData[index].isActive = true;
+        }
+        else if (index == (LEDS_PER_STRING - 1)) // last LED
+        {
+            if (!ledData[index - 1].isActive && (rand() % 1000 == 0)) // second last LED is off
+                ledData[index].isActive = true;
+        }
+        else if (!ledData[index - 1].isActive && !ledData[index + 1].isActive) // LED before and after are off
+        {
+            if (rand() % 1000 == 0)
+                ledData[index].isActive = true;
         }
 
         LED_Handle_Sparkling_Single_Fade(&ledData[index]);
