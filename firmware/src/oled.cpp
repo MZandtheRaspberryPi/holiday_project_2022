@@ -6,22 +6,21 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
-#define SCREEN_WIDTH        128 // OLED display width, in pixels
-#define SCREEN_HEIGHT       64 // OLED display height, in pixels
-
-#define TIME_LINE_HEIGHT    (SCREEN_HEIGHT / 2)
+#define SCREEN_WIDTH            128 // OLED display width, in pixels
+#define SCREEN_HEIGHT           64 // OLED display height, in pixels
+#define SCREEN_BUFFER_HEIGHT    (SCREEN_HEIGHT / 8) // 8 Pixel in a column are packed into one byte
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
 void Frame_Shift(FRAME_ShiftDirection_e direction, FRAME_Part_e framePart = FRAME_PART_FULL)
 {
-    uint8_t height = framePart == FRAME_PART_FULL ? SCREEN_HEIGHT : SCREEN_HEIGHT / 2;
-    uint16_t offset = framePart == FRAME_PART_BOT ? (SCREEN_WIDTH * SCREEN_HEIGHT / 8 / 2) : 0;
+    uint8_t height = framePart == FRAME_PART_FULL ? SCREEN_BUFFER_HEIGHT : SCREEN_BUFFER_HEIGHT / 2;
+    uint16_t offset = framePart == FRAME_PART_BOT ? (SCREEN_WIDTH * SCREEN_BUFFER_HEIGHT / 2) : 0;
     uint8_t* displayBuffer = display.getBuffer();
 
     if (direction == FRAME_SHIFT_RIGHT)
     {
-        for (int h = 0; h < (height / 8); ++h)
+        for (int h = 0; h < height; ++h)
         {
             for (int w = (SCREEN_WIDTH - 1); w >= 0; --w)
             {
@@ -36,7 +35,7 @@ void Frame_Shift(FRAME_ShiftDirection_e direction, FRAME_Part_e framePart = FRAM
     }
     else
     {
-        for (int h = 0; h < (height / 8); ++h)
+        for (int h = 0; h < height; ++h)
         {
             for (int w = 0; w < SCREEN_WIDTH; ++w)
             {
@@ -49,6 +48,15 @@ void Frame_Shift(FRAME_ShiftDirection_e direction, FRAME_Part_e framePart = FRAM
             }
         }
     }
+}
+
+void Frame_Clear(FRAME_Part_e framePart = FRAME_PART_FULL)
+{
+    uint16_t size = framePart == FRAME_PART_FULL ? SCREEN_WIDTH * SCREEN_BUFFER_HEIGHT : SCREEN_WIDTH * SCREEN_BUFFER_HEIGHT / 2;
+    uint16_t offset = framePart == FRAME_PART_BOT ? SCREEN_WIDTH * SCREEN_BUFFER_HEIGHT / 2 : 0;
+    uint8_t* displayBuffer = display.getBuffer();
+
+    memset(&displayBuffer[0 + offset], 0, size);
 }
 
 void Timeline_Draw_Data_Point(uint16_t dataPoint, uint16_t scale, FRAME_Part_e framePart)
@@ -66,24 +74,20 @@ void Timeline_Draw_Data_Point(uint16_t dataPoint, uint16_t scale, FRAME_Part_e f
     Frame_Shift(FRAME_SHIFT_LEFT, framePart);
 
     display.drawPixel(SCREEN_WIDTH - 1, (offset + height - 1) - pointY, SSD1306_WHITE);
-    // display.drawPixel(SCREEN_WIDTH - 1, (offset + height - 1), SSD1306_WHITE);
+    // display.drawPixel(SCREEN_WIDTH - 1, (offset + height - 1), SSD1306_WHITE); // draw zero line
 
     display.display();
 }
 
-void Clear_Lower_Half(void)
-{
-    uint8_t* displayBuffer = display.getBuffer();
-
-    memset(&displayBuffer[4 * SCREEN_WIDTH], 0, 4 * SCREEN_WIDTH);
-}
-
 void Plot_ADC_Dump(uint16_t* data, uint16_t size)
 {
+    uint16_t plotHeight = SCREEN_HEIGHT / 2;
+    uint16_t maxDataVal = plotHeight - 1;
+
     if (size > (SCREEN_WIDTH * 2))
         return;
 
-    Clear_Lower_Half();
+    Frame_Clear();
 
     for (int line = 0; line < 2; ++line)
     {
@@ -102,13 +106,15 @@ void Plot_ADC_Dump(uint16_t* data, uint16_t size)
         {
             uint16_t dataPoint = data[i + (line * SCREEN_WIDTH)];
 
-            if (dataPoint > 15)
-                dataPoint = 15;
+            if (dataPoint > maxDataVal)
+                dataPoint = maxDataVal;
             
-            display.drawPixel(i, (47 + (16 * line)) - dataPoint, SSD1306_WHITE);
-            display.drawPixel(i, (47 + (16 * line)), SSD1306_WHITE);
+            display.drawPixel(i, (maxDataVal + (plotHeight * line)) - dataPoint, SSD1306_WHITE);
+            display.drawPixel(i, (maxDataVal + (plotHeight * line)), SSD1306_WHITE);
         }
     }
+
+    display.display();
 }
 
 bool Task_OLED_Setup(void)

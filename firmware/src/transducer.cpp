@@ -23,6 +23,8 @@ typedef enum {
     TRANSDUCER_SWITCH_DURATION_LONG
 } TRANSDUCER_SwitchDuration_e;
 
+static bool doAdvancedADC = false;
+
 void Transducer_Handle_Switch(bool switchInput)
 {
     static uint32_t startTime = 0;
@@ -53,7 +55,7 @@ void Transducer_Handle_Switch(bool switchInput)
             else if (switchDuration == TRANSDUCER_SWITCH_DURATION_MIDDLE && (millis() - startTime) > TRANSDUCER_SWITCH_LONG_TIME)
             {
                 switchDuration = TRANSDUCER_SWITCH_DURATION_LONG;
-                //TBD
+                doAdvancedADC = !doAdvancedADC;
             }
 
             lastTime = millis();
@@ -93,7 +95,7 @@ bool Basic_Presence_Detection(void)
 #define ADC_FRAME_SAMPLES   256
 
 static uint16_t adcFrame[ADC_FRAME_SAMPLES];
-bool Advanced_Presence_Detection(void)
+void Record_ADC_Frame(void)
 {
     uint32_t startTime;
 
@@ -110,10 +112,11 @@ bool Advanced_Presence_Detection(void)
 
     interrupts();
     ets_intr_unlock();
+}
 
+void Analyze_ADC_Frame(void)
+{
     Plot_ADC_Dump(adcFrame, ADC_FRAME_SAMPLES);
-
-    return false;
 }
 
 bool Task_Transducer_Setup(void)
@@ -126,6 +129,20 @@ bool Task_Transducer_Setup(void)
 
 void Task_Transducer_Periodic(void)
 {
-    bool presenceDetected = Basic_Presence_Detection();
-    Transducer_Handle_Switch(presenceDetected);
+    if (!doAdvancedADC)
+    {
+        bool presenceDetected = Basic_Presence_Detection();
+        Transducer_Handle_Switch(presenceDetected);
+    }
+    else
+    {
+        static bool measureFrame = true;
+
+        if (measureFrame)
+            Record_ADC_Frame();
+        else
+            Analyze_ADC_Frame();
+
+        measureFrame = !measureFrame;
+    }
 }
