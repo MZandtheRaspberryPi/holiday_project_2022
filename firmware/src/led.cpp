@@ -286,7 +286,7 @@ void LED_Trigger_Action_Mode(void)
     ledActionModeActive = true;
 }
 
-bool task_LED_setup(void)
+bool Task_LED_Setup(void)
 {
     // delay( 3000 ); // power-up safety delay
     FastLED.addLeds<LED_TYPE, PIN_WS2812_R, COLOR_ORDER>(ledsR, LEDS_PER_STRING).setCorrection( TypicalLEDStrip );
@@ -296,12 +296,12 @@ bool task_LED_setup(void)
     currentPalette = RainbowColors_p;
     currentBlending = LINEARBLEND;
 
-    LED_Mode_Sparkling_Set_Color(0, 50, 40);
+    LED_Mode_Sparkling_Set_Color(0, 50, 50);
 
     return true;
 }
 
-void task_LED_periodic(void)
+void Task_LED_Periodic(void)
 {
     if (ledActionModeActive)
     {

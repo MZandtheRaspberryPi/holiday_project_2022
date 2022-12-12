@@ -1,14 +1,16 @@
 #include "transducer.h"
 
 #include <Arduino.h>
+#include "user_interface.h"
 #include "pins.h"
 #include "led.h"
 #include "oled.h"
 
-#define PWM_FREQUENCY               39000
-#define ADC_SAMPLES_BASIC           20
+#define PWM_FREQUENCY                   40000
+#define ADC_SAMPLES_BASIC               20
 
-#define TRANSDUCER_SWITCH_LONG_TIME 3000
+#define TRANSDUCER_SWITCH_MIDDLE_TIME   3000
+#define TRANSDUCER_SWITCH_LONG_TIME     7000
 
 typedef enum {
     TRANSDUCER_SWITCH_STATE_NEAR = 0,
@@ -17,6 +19,7 @@ typedef enum {
 
 typedef enum {
     TRANSDUCER_SWITCH_DURATION_SHORT = 0,
+    TRANSDUCER_SWITCH_DURATION_MIDDLE,
     TRANSDUCER_SWITCH_DURATION_LONG
 } TRANSDUCER_SwitchDuration_e;
 
@@ -42,10 +45,15 @@ void Transducer_Handle_Switch(bool switchInput)
     {
         if (switchInput)
         {
-            if (switchDuration == TRANSDUCER_SWITCH_DURATION_SHORT && (millis() - startTime) > TRANSDUCER_SWITCH_LONG_TIME)
+            if (switchDuration == TRANSDUCER_SWITCH_DURATION_SHORT && (millis() - startTime) > TRANSDUCER_SWITCH_MIDDLE_TIME)
+            {
+                switchDuration = TRANSDUCER_SWITCH_DURATION_MIDDLE;
+                LED_Switch_Mode();
+            }
+            else if (switchDuration == TRANSDUCER_SWITCH_DURATION_MIDDLE && (millis() - startTime) > TRANSDUCER_SWITCH_LONG_TIME)
             {
                 switchDuration = TRANSDUCER_SWITCH_DURATION_LONG;
-                LED_Switch_Mode();
+                //TBD
             }
 
             lastTime = millis();
@@ -60,7 +68,7 @@ void Transducer_Handle_Switch(bool switchInput)
     }
 }
 
-bool basic_presence_detection(void)
+bool Basic_Presence_Detection(void)
 {
     analogWrite(PIN_PWM, 512);
 
@@ -75,12 +83,40 @@ bool basic_presence_detection(void)
 
     avg = sum / ADC_SAMPLES_BASIC;
 
-    draw_data_point(avg, 64);
+    Timeline_Draw_Data_Point(avg, 64, FRAME_PART_BOT);
 
     return avg > 2;
 }
 
-bool task_transducer_setup(void)
+#define PULSE_LENGTH        (25 * 10)   // 40 kHz = 25 µs
+#define ADC_CLOCK_DIV       21          // results in about 10µs adc sample time
+#define ADC_FRAME_SAMPLES   256
+
+static uint16_t adcFrame[ADC_FRAME_SAMPLES];
+bool Advanced_Presence_Detection(void)
+{
+    uint32_t startTime;
+
+    analogWrite(PIN_PWM, 512);
+    startTime = micros();
+
+    while((micros() - startTime) < PULSE_LENGTH);
+    analogWrite(PIN_PWM, 0);
+
+    ets_intr_lock();
+    noInterrupts();
+
+    system_adc_read_fast(adcFrame, ADC_FRAME_SAMPLES, ADC_CLOCK_DIV);
+
+    interrupts();
+    ets_intr_unlock();
+
+    Plot_ADC_Dump(adcFrame, ADC_FRAME_SAMPLES);
+
+    return false;
+}
+
+bool Task_Transducer_Setup(void)
 {
     analogWriteFreq(PWM_FREQUENCY);
     analogWriteRange(1023);
@@ -88,8 +124,8 @@ bool task_transducer_setup(void)
     return true;
 }
 
-void task_transducer_periodic(void)
+void Task_Transducer_Periodic(void)
 {
-    bool presenceDetected = basic_presence_detection();
+    bool presenceDetected = Basic_Presence_Detection();
     Transducer_Handle_Switch(presenceDetected);
 }

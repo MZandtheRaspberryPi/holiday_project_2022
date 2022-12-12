@@ -18,7 +18,7 @@ typedef struct Color_t
 
 void LED_Switch_Mode(void);
 void LED_Trigger_Action_Mode(void);
-bool task_LED_setup(void);
-void task_LED_periodic(void);
+bool Task_LED_Setup(void);
+void Task_LED_Periodic(void);
 
 #endif // LED_H

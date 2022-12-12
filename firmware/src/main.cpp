@@ -6,12 +6,10 @@
 #include "transducer.h"
 #include "pins.h"
 
-void led_blink();
-
 Scheduler runner;
-Task Task_LED_WS2812(TASK_LED_INTERVAL, TASK_FOREVER, &task_LED_periodic, &runner, false, &task_LED_setup);
-Task Task_OLED(TASK_OLED_INTERVAL, TASK_FOREVER, &task_OLED_periodic, &runner, false, &task_OLED_setup);
-Task Task_Transducer(TASK_TRANSDUCER_INTERVAL, TASK_FOREVER, &task_transducer_periodic, &runner, false, &task_transducer_setup);
+Task Task_LED_WS2812(TASK_LED_INTERVAL, TASK_FOREVER, &Task_LED_Periodic, &runner, false, &Task_LED_Setup);
+Task Task_OLED(TASK_OLED_INTERVAL, TASK_FOREVER, &Task_OLED_Periodic, &runner, false, &Task_OLED_Setup);
+Task Task_Transducer(TASK_TRANSDUCER_INTERVAL, TASK_FOREVER, &Task_Transducer_Periodic, &runner, false, &Task_Transducer_Setup);
 
 void setup() {
   Serial.begin(9600);
