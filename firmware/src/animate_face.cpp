@@ -19,6 +19,9 @@ const uint8_t MOUTH_Y_2 = MOUTH_Y_1;
 const uint8_t MOUTH_Y_3 = SCREEN_HEIGHT * 15 / 16;
 const uint8_t MOUTH_HEIGHT = MOUTH_Y_3 - MOUTH_Y_1;
 
+const uint8_t MOUTH_SURPRISE_RADIUS = 40;
+const uint8_t MOUTH_SURPRISE_Y_OFFSET = 2;
+
 const uint8_t FANG_WIDTH = SCREEN_WIDTH * 2 / 32;
 const uint8_t FANG_1_HEIGHT = SCREEN_HEIGHT * 4 / 16;
 const uint8_t FANG_2_HEIGHT = SCREEN_HEIGHT * 3 / 16;
@@ -43,13 +46,38 @@ const uint16_t ANIMATION_MAX_COUNT_DURATION = 100;
 const uint16_t ANIMATION_TIMELINE_MAX = 300;
 const uint16_t ANIMATION_NUM_ANIMATIONS = 3;
 
+static bool ANIMATION_ACTIVE_MODE = false;
+static uint16_t ACTIVE_MODE_COUNTER = 0;
+const uint8_t ACTIVE_MODE_DURATION = 200;
+
 extern Adafruit_SSD1306 display;
+
+void animationTriggerActionMode(void)
+{
+  ANIMATION_ACTIVE_MODE = true;
+}
 
 void displayFace(uint8_t left_eye_y_offset, uint8_t right_eye_y_offset, uint8_t mouth_y_offset)
 {
   display.clearDisplay();
-  display.fillTriangle(MOUTH_X_1, MOUTH_Y_1, MOUTH_X_2, MOUTH_Y_2, MOUTH_X_3,
-                    MOUTH_Y_3 - mouth_y_offset, SSD1306_WHITE);
+  uint16_t tooth_color;
+  if (!ANIMATION_ACTIVE_MODE)
+  {
+    display.fillTriangle(MOUTH_X_1, MOUTH_Y_1, MOUTH_X_2, MOUTH_Y_2, MOUTH_X_3,
+                      MOUTH_Y_3 - mouth_y_offset, SSD1306_WHITE);
+    tooth_color = SSD1306_WHITE;
+  }
+  else
+  {
+    display.fillCircle(MOUTH_X_3, MOUTH_Y_1 + MOUTH_SURPRISE_RADIUS - MOUTH_SURPRISE_Y_OFFSET, MOUTH_SURPRISE_RADIUS - (mouth_y_offset / 2), SSD1306_WHITE);
+    tooth_color = SSD1306_BLACK;
+    ACTIVE_MODE_COUNTER++;
+    if (ACTIVE_MODE_COUNTER > ACTIVE_MODE_DURATION)
+    {
+      ANIMATION_ACTIVE_MODE = false;
+      ACTIVE_MODE_COUNTER = 0;
+    }
+  }
 
   display.fillTriangle(FANG_1_X_1, FANG_1_Y_1, FANG_1_X_2, FANG_1_Y_2, FANG_1_X_3,
                   FANG_1_Y_3, SSD1306_WHITE);

@@ -5,6 +5,7 @@
 #include "pins.h"
 #include "led.h"
 #include "oled.h"
+#include "animate_face.h"
 
 #define PWM_FREQUENCY                   40000
 #define ADC_SAMPLES_BASIC               20
@@ -41,6 +42,7 @@ void Transducer_Handle_Switch(bool switchInput)
             startTime = millis();
             lastTime = startTime;
             LED_Trigger_Action_Mode();
+            animationTriggerActionMode();
         }
     }
     else
