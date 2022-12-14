@@ -11,7 +11,12 @@
 #define SCREEN_BUFFER_HEIGHT    (SCREEN_HEIGHT / 8) // 8 Pixel in a column are packed into one byte
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1, 400000, 400000);
-static bool doDisplayFace = true;
+static bool showAdcData = false;
+
+void Show_ADC_Data(bool show)
+{
+    showAdcData = show;
+}
 
 void Frame_Shift(FRAME_ShiftDirection_e direction, FRAME_Part_e framePart = FRAME_PART_FULL)
 {
@@ -62,12 +67,13 @@ void Frame_Clear(FRAME_Part_e framePart = FRAME_PART_FULL)
 
 void Timeline_Draw_Data_Point(uint16_t dataPoint, uint16_t scale, FRAME_Part_e framePart)
 {
+    if (!showAdcData)
+        return;
+
     uint8_t height = framePart == FRAME_PART_FULL ? SCREEN_HEIGHT : SCREEN_HEIGHT / 2;
     uint8_t offset = framePart == FRAME_PART_BOT ? (SCREEN_HEIGHT / 2) : 0;
     float scaleFactor = (float)height / scale;
     int16_t pointY = scaleFactor * dataPoint;
-
-    doDisplayFace = false;
 
     if (pointY > (height - 1))
         pointY = height - 1;
@@ -84,17 +90,19 @@ void Timeline_Draw_Data_Point(uint16_t dataPoint, uint16_t scale, FRAME_Part_e f
 
 void Plot_ADC_Dump(uint16_t* data, uint16_t size)
 {
-    uint16_t plotHeight = SCREEN_HEIGHT / 2;
+    if (!showAdcData)
+        return;
+
+    uint8_t lines = size > SCREEN_WIDTH ? 2 : 1;
+    uint16_t plotHeight = SCREEN_HEIGHT / lines;
     uint16_t maxDataVal = plotHeight - 1;
 
-    doDisplayFace = false;
-
     if (size > (SCREEN_WIDTH * 2))
-        return;
+        size = SCREEN_WIDTH * 2;
 
     Frame_Clear();
 
-    for (int line = 0; line < 2; ++line)
+    for (int line = 0; line < lines; ++line)
     {
         uint8_t lineLength;
         if (size < SCREEN_WIDTH)
@@ -109,7 +117,7 @@ void Plot_ADC_Dump(uint16_t* data, uint16_t size)
 
         for (int i = 0; i < lineLength; ++i)
         {
-            uint16_t dataPoint = data[i + (line * SCREEN_WIDTH)];
+            uint16_t dataPoint = data[i + (line * SCREEN_WIDTH)] / 16;
 
             if (dataPoint > maxDataVal)
                 dataPoint = maxDataVal;
@@ -154,6 +162,6 @@ void Task_OLED_Periodic(void)
 {
     // if we are in adc dump mode, show graph
     // else show face
-    if (doDisplayFace)
+    if (!showAdcData)
         animateFace();
 }

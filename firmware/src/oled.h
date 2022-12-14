@@ -24,5 +24,6 @@ bool Task_OLED_Setup(void);
 void Task_OLED_Periodic(void);
 void Timeline_Draw_Data_Point(uint16_t dataPoint, uint16_t scale, FRAME_Part_e framePart = FRAME_PART_FULL);
 void Plot_ADC_Dump(uint16_t* data, uint16_t size);
+void Show_ADC_Data(bool show);
 
 #endif // OLED_H

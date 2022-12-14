@@ -13,6 +13,14 @@
 #define TRANSDUCER_SWITCH_MIDDLE_TIME   3000
 #define TRANSDUCER_SWITCH_LONG_TIME     7000
 
+#define PERIOD_COUNT                    2
+#define PULSE_LENGTH                    ((25 * PERIOD_COUNT) - 50)  // 40 kHz = 25 µs; 50 µs for function calls
+#define ADC_CLOCK_DIV                   21                          // results in about 10µs adc sample time
+#define ADC_FRAME_SAMPLES               256
+
+#define ADC_FRAME_AVERAGE_MASK_SIZE     4
+#define ADC_FRAME_AVERAGE_DATA_SIZE     (ADC_FRAME_SAMPLES - (ADC_FRAME_AVERAGE_MASK_SIZE - 1))
+
 typedef enum {
     TRANSDUCER_SWITCH_STATE_NEAR = 0,
     TRANSDUCER_SWITCH_STATE_FAR
@@ -24,7 +32,9 @@ typedef enum {
     TRANSDUCER_SWITCH_DURATION_LONG
 } TRANSDUCER_SwitchDuration_e;
 
-static bool doAdvancedADC = false;
+static uint16_t adcFrame[ADC_FRAME_SAMPLES];
+static bool doAdvancedADC = true;
+static bool plotAdcDump = false;
 
 void Transducer_Handle_Switch(bool switchInput)
 {
@@ -57,7 +67,8 @@ void Transducer_Handle_Switch(bool switchInput)
             else if (switchDuration == TRANSDUCER_SWITCH_DURATION_MIDDLE && (millis() - startTime) > TRANSDUCER_SWITCH_LONG_TIME)
             {
                 switchDuration = TRANSDUCER_SWITCH_DURATION_LONG;
-                doAdvancedADC = !doAdvancedADC;
+                plotAdcDump = !plotAdcDump;
+                Show_ADC_Data(plotAdcDump);
             }
 
             lastTime = millis();
@@ -92,48 +103,81 @@ bool Basic_Presence_Detection(void)
     return avg > 2;
 }
 
-#define PULSE_LENGTH        (25 * 10)   // 40 kHz = 25 µs
-#define ADC_CLOCK_DIV       21          // results in about 10µs adc sample time
-#define ADC_FRAME_SAMPLES   256
-
-static uint16_t adcFrame[ADC_FRAME_SAMPLES];
-void Record_ADC_Frame(void)
+void Record_ADC_Frame(uint16_t* adcData, uint16_t size)
 {
-    uint32_t startTime;
+    uint32_t startTime = micros();
 
-    analogWrite(PIN_PWM, 512);
-    startTime = micros();
+    digitalWrite(PIN_PWM, HIGH);
+    while((micros() - startTime < 12));
+    digitalWrite(PIN_PWM, LOW);
 
-    while((micros() - startTime) < PULSE_LENGTH);
-    analogWrite(PIN_PWM, 0);
+    // analogWrite(PIN_PWM, 512);
+    // startTime = micros();
+
+    // while((micros() - startTime) < PULSE_LENGTH);
+    // analogWrite(PIN_PWM, 0);
 
     ets_intr_lock();
     noInterrupts();
 
-    system_adc_read_fast(adcFrame, ADC_FRAME_SAMPLES, ADC_CLOCK_DIV);
+    system_adc_read_fast(adcData, size, ADC_CLOCK_DIV);
 
     interrupts();
     ets_intr_unlock();
 }
 
-void Analyze_ADC_Frame(void)
+void Calc_Average_Data(uint16_t* dataIn, uint16_t* dataOut)
 {
-    Plot_ADC_Dump(adcFrame, ADC_FRAME_SAMPLES);
+    uint32_t sum = 0;
+
+    for (int i = 0; i < ADC_FRAME_AVERAGE_MASK_SIZE; ++i)
+    {
+        sum += dataIn[i];
+    }
+    dataOut[0] = sum / ADC_FRAME_AVERAGE_MASK_SIZE;
+
+    for (int i = 1; i < ADC_FRAME_AVERAGE_DATA_SIZE; ++i)
+    {
+        sum -= dataIn[i - 1];
+        sum += dataIn[i + ADC_FRAME_AVERAGE_MASK_SIZE - 1];
+        dataOut[i] = sum / ADC_FRAME_AVERAGE_MASK_SIZE;
+    }
+}
+
+bool Analyze_ADC_Frame(void)
+{
+    uint16_t avgData[ADC_FRAME_AVERAGE_DATA_SIZE];
+
+    Calc_Average_Data(adcFrame, avgData);
+
+    uint32_t sum = 0;
+    for (int i = 0; i < ADC_FRAME_AVERAGE_DATA_SIZE; ++i)
+    {
+        sum += avgData[i];
+    }
+
+    // Plot_ADC_Dump(adcFrame, 256);
+    Plot_ADC_Dump(avgData, 256);
+
+    return sum > 20000;
 }
 
 bool Task_Transducer_Setup(void)
 {
     analogWriteFreq(PWM_FREQUENCY);
     analogWriteRange(1023);
+    pinMode(PIN_PWM, OUTPUT);
 
     return true;
 }
 
 void Task_Transducer_Periodic(void)
 {
+    bool presenceDetected = false;
+
     if (!doAdvancedADC)
     {
-        bool presenceDetected = Basic_Presence_Detection();
+        presenceDetected = Basic_Presence_Detection();
         Transducer_Handle_Switch(presenceDetected);
     }
     else
@@ -141,9 +185,12 @@ void Task_Transducer_Periodic(void)
         static bool measureFrame = true;
 
         if (measureFrame)
-            Record_ADC_Frame();
+            Record_ADC_Frame(adcFrame, ADC_FRAME_SAMPLES);
         else
-            Analyze_ADC_Frame();
+        {
+            presenceDetected = Analyze_ADC_Frame();
+            Transducer_Handle_Switch(presenceDetected);
+        }
 
         measureFrame = !measureFrame;
     }
