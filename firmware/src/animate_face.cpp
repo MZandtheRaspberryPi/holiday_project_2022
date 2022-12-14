@@ -41,14 +41,14 @@ const uint8_t FANG_2_Y_2 = MOUTH_Y_1;
 const uint8_t FANG_2_Y_3 = FANG_2_Y_1 + FANG_2_HEIGHT;
 
 
-const uint16_t ANIMATION_MIN_COUNT_DURATION = 20;
-const uint16_t ANIMATION_MAX_COUNT_DURATION = 100;
-const uint16_t ANIMATION_TIMELINE_MAX = 300;
+const uint16_t ANIMATION_MIN_COUNT_DURATION = 12;
+const uint16_t ANIMATION_MAX_COUNT_DURATION = 33;
+const uint16_t ANIMATION_TIMELINE_MAX = 100;
 const uint16_t ANIMATION_NUM_ANIMATIONS = 3;
 
 static bool ANIMATION_ACTIVE_MODE = false;
 static uint16_t ACTIVE_MODE_COUNTER = 0;
-const uint8_t ACTIVE_MODE_DURATION = 200;
+const uint8_t ACTIVE_MODE_DURATION = 150;
 
 extern Adafruit_SSD1306 display;
 
@@ -80,10 +80,10 @@ void displayFace(uint8_t left_eye_y_offset, uint8_t right_eye_y_offset, uint8_t 
   }
 
   display.fillTriangle(FANG_1_X_1, FANG_1_Y_1, FANG_1_X_2, FANG_1_Y_2, FANG_1_X_3,
-                  FANG_1_Y_3, SSD1306_WHITE);
+                  FANG_1_Y_3, tooth_color);
 
   display.fillTriangle(FANG_2_X_1, FANG_2_Y_1, FANG_2_X_2, FANG_2_Y_2, FANG_2_X_3,
-                  FANG_2_Y_3, SSD1306_WHITE);
+                  FANG_2_Y_3, tooth_color);
 
   display.fillRoundRect(LEFT_EYE_X_START, EYE_Y_START + left_eye_y_offset,
                         EYE_WIDTH, EYE_HEIGHT - left_eye_y_offset,
@@ -157,7 +157,7 @@ void actuateMouth(const uint16_t counter, const uint16_t end_count)
 
   if (first_call_in_cycle)
   {
-    num_mouth_cycles = random(3, 4);
+    num_mouth_cycles = random(1, 2);
     time_for_animation = end_count - counter;
     y_offset_increment = static_cast<float>(MOUTH_HEIGHT) * num_mouth_cycles * 2 / time_for_animation;
     if (y_offset_increment == 0)
@@ -253,15 +253,15 @@ void animateFace()
   static uint16_t animation_count_duration = random(ANIMATION_MIN_COUNT_DURATION, ANIMATION_MAX_COUNT_DURATION);
   static uint16_t count_end = counter + animation_count_duration;
 
-  if (action_number >= 0 && action_number < 4)
+  if (action_number >= 0 && action_number < 7)
   {
     displayFace(0, 0, 0);
   }
-  else if (action_number >= 4 && action_number < 6)
+  else if (action_number >= 7 && action_number < 8)
   {
     blinkEyes(counter, count_end);
   }
-  else if (action_number >= 6 && action_number < 8)
+  else if (action_number >= 8 && action_number < 9)
   {
     actuateMouth(counter, count_end);
   }
