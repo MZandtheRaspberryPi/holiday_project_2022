@@ -10,7 +10,7 @@
 
 #define SCREEN_BUFFER_HEIGHT    (SCREEN_HEIGHT / 8) // 8 Pixel in a column are packed into one byte
 
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1, 400000, 400000);
 static bool doDisplayFace = true;
 
 void Frame_Shift(FRAME_ShiftDirection_e direction, FRAME_Part_e framePart = FRAME_PART_FULL)
@@ -144,6 +144,7 @@ bool Task_OLED_Setup(void)
         Serial.println(F("SSD1306 allocation failed"));
         for(;;);
     }
+    Wire.setClock(400000);
     // Display_Default_HomeScreen();
     displayFace(0, 0, 0);
     return true;

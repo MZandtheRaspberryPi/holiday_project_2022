@@ -3,7 +3,7 @@
 
 #include "stdint.h"
 
-#define TASK_OLED_FREQUENCY 100                             // Hz
+#define TASK_OLED_FREQUENCY 30                             // Hz
 #define TASK_OLED_INTERVAL  (1000 / TASK_OLED_FREQUENCY)   // ms
 
 #define SCREEN_WIDTH        128 // OLED display width, in pixels
