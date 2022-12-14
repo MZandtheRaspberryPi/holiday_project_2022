@@ -85,7 +85,7 @@ bool Basic_Presence_Detection(void)
 
     avg = sum / ADC_SAMPLES_BASIC;
 
-    Timeline_Draw_Data_Point(avg, 64, FRAME_PART_BOT);
+    // Timeline_Draw_Data_Point(avg, 64, FRAME_PART_BOT);
 
     return avg > 2;
 }
