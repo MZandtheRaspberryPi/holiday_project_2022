@@ -18,7 +18,7 @@
 #define ADC_CLOCK_DIV                   21                          // results in about 10µs adc sample time
 #define ADC_FRAME_SAMPLES               256
 
-#define ADC_FRAME_AVERAGE_MASK_SIZE     4
+#define ADC_FRAME_AVERAGE_MASK_SIZE     32
 #define ADC_FRAME_AVERAGE_DATA_SIZE     (ADC_FRAME_SAMPLES - (ADC_FRAME_AVERAGE_MASK_SIZE - 1))
 
 typedef enum {
@@ -35,6 +35,20 @@ typedef enum {
 static uint16_t adcFrame[ADC_FRAME_SAMPLES];
 static bool doAdvancedADC = true;
 static bool plotAdcDump = false;
+
+// pirmary pulse < 128 samples
+uint16_t adc_base[ADC_FRAME_AVERAGE_DATA_SIZE] = {177, 186, 196, 196, 208, 214, 223, 230, 240, 246, 245, 252, 252, 268, 264, 272,
+                                                        262, 262, 268, 262, 274, 253, 254, 245, 243, 253, 232, 238, 221, 221, 229, 213,
+                                                        221, 199, 201, 195, 186, 192, 173, 177, 162, 160, 165, 151, 154, 139, 140, 132,
+                                                        125, 128, 115, 116, 106, 105, 105, 95, 97, 87, 87, 82, 78, 79, 70, 70, 64, 63,
+                                                        61, 56, 57, 52, 51, 49, 47, 47, 43, 43, 40, 38, 38, 36, 36, 34, 34, 32, 32, 32,
+                                                        30, 30, 29, 29, 28, 28, 28, 27, 27, 27, 26, 26, 26, 26, 25, 26, 26, 25, 25, 25,
+                                                        25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25,
+                                                        25, 24, 25, 25, 25, 25, 25, 25, 24, 25, 24, 24, 24, 25, 24, 24, 25, 24, 24, 25,
+                                                        25, 25, 25, 24, 24, 24, 24, 25, 24, 24, 24, 24, 24, 24, 24, 24, 24, 25, 24, 25,
+                                                        25, 25, 24, 24, 25, 25, 25, 25, 25, 25, 25, 24, 24, 24, 25, 25, 25, 25, 25, 25,
+                                                        25, 24, 25, 25, 24, 24, 24, 24, 24, 24, 25, 25, 25, 25, 24, 24, 24, 24, 24, 24,
+                                                        24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24};
 
 void Transducer_Handle_Switch(bool switchInput)
 {
@@ -162,11 +176,37 @@ bool Analyze_ADC_Frame(void)
     return sum > 20000;
 }
 
+void Print_Primary_Pulse_Array(void)
+{
+    uint16_t tmpAdcFrame[ADC_FRAME_SAMPLES];
+    uint16_t tmpAvgData[2][ADC_FRAME_AVERAGE_DATA_SIZE] = {0};
+
+    for (int i = 0; i < 5; ++i)
+    {
+        delay(500);
+        Record_ADC_Frame(tmpAdcFrame, ADC_FRAME_SAMPLES);
+        Calc_Average_Data(tmpAdcFrame, tmpAvgData[0]);
+
+        for (int n = 0; n < ADC_FRAME_AVERAGE_DATA_SIZE; ++n)
+        {
+            if (tmpAvgData[0][n] > tmpAvgData[1][n])
+                tmpAvgData[1][n] = tmpAvgData[0][n];
+        }
+    }
+
+    for (int n = 0; n < ADC_FRAME_AVERAGE_DATA_SIZE; ++n)
+    {
+        Serial.printf("%u, ", tmpAvgData[1][n] + 20);
+    }
+}
+
 bool Task_Transducer_Setup(void)
 {
     analogWriteFreq(PWM_FREQUENCY);
     analogWriteRange(1023);
     pinMode(PIN_PWM, OUTPUT);
+
+    Print_Primary_Pulse_Array();
 
     return true;
 }
